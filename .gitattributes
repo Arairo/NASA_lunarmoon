@@ -1,0 +1,3 @@
+# Data files must never be line-ending normalised.
+*.bin binary
+*.jpg binary

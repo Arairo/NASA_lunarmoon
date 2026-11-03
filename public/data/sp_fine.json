@@ -1,0 +1,16 @@
+{
+  "name": "sp_fine",
+  "projection": "south-polar-stereographic",
+  "radius": 1737400.0,
+  "halfExtent": 180000.0,
+  "cellSize": 240.0,
+  "size": 1500,
+  "dtype": "int16-le",
+  "noData": -32768,
+  "units": "metres above 1737.4 km sphere",
+  "rowOrder": "row 0 at +y (lon 0 up), column 0 at -x",
+  "minHeight": -5495.0,
+  "maxHeight": 7024.0,
+  "directCoverage": 0.9999,
+  "source": "LRO LOLA RDR via USGS Astrogeology ARD (s3://astrogeo-ard/moon/lro/lola/)"
+}

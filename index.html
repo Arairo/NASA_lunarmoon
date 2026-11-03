@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lunar Site Planner</title>
+    <meta name="description" content="Compare lunar landing sites and dates: Sun and Earth over the LOLA terrain horizon, solar power and direct-to-Earth communication windows." />
+    <meta name="theme-color" content="#f4f5f3" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2315191e' stroke-width='2.5'/%3E%3Cpath d='M3 18h26' stroke='%2315191e' stroke-width='2.5'/%3E%3Ccircle cx='22' cy='9' r='2.5' fill='%23c27c00'/%3E%3C/svg%3E" />
+  </head>
+  <body data-pane="view">
+    <a class="skip-link" href="#assessment">Skip to results</a>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" /><path d="M3 18h26" /><circle class="sun-dot" cx="22" cy="9" r="2.5" /></svg>
+        <div>
+          <h1>Lunar Site Planner</h1>
+          <p class="tagline">Sun, Earth and terrain horizon for any landing site and date</p>
+        </div>
+      </div>
+      <div class="timebar" role="group" aria-label="Time controls">
+        <label class="field" for="datetime">
+          <span>Date and time (UTC)</span>
+          <input id="datetime" type="datetime-local" step="60" />
+        </label>
+        <div class="seg" role="group" aria-label="Step time">
+          <button id="stepBackDay" title="Back one Earth day" aria-label="Back one day">−1 d</button>
+          <button id="stepBackHour" title="Back one hour" aria-label="Back one hour">−1 h</button>
+          <button id="playPause" class="primary" title="Play or pause (Space)" aria-label="Play">Play</button>
+          <button id="stepFwdHour" title="Forward one hour" aria-label="Forward one hour">+1 h</button>
+          <button id="stepFwdDay" title="Forward one Earth day" aria-label="Forward one day">+1 d</button>
+        </div>
+        <label class="field compact" for="speed">
+          <span>Speed</span>
+          <select id="speed">
+            <option value="600">10 min/s</option>
+            <option value="3600" selected>1 h/s</option>
+            <option value="21600">6 h/s</option>
+            <option value="86400">1 day/s</option>
+          </select>
+        </label>
+        <button id="nowBtn" class="ghost" title="Jump to the current time">Now</button>
+      </div>
+      <div class="top-actions">
+        <button id="tourBtn" class="ghost">Tour</button>
+        <button id="learnBtn" class="ghost" aria-pressed="false" title="Show plain-language explanations">Learn mode</button>
+        <button id="settingsBtn" class="ghost" title="Spacecraft assumptions">Spacecraft</button>
+        <button id="compareBtn" class="ghost" aria-controls="compareDrawer" aria-expanded="false">Compare <span id="compareCount" class="count">0</span></button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel left" aria-label="Sites" data-pane="site">
+        <section>
+          <h2>Site</h2>
+          <p class="hint">Click the Moon or the map, choose a site below, or enter coordinates.</p>
+          <form id="coordForm" class="coord-form">
+            <label class="visually-hidden" for="coordInput">Latitude, longitude</label>
+            <input id="coordInput" placeholder="lat, lon   e.g. -89.45, -137.3" autocomplete="off" aria-describedby="coordError" />
+            <button type="submit">Go</button>
+          </form>
+          <p id="coordError" class="field-error" role="alert" hidden></p>
+          <label class="visually-hidden" for="siteFilter">Filter sites</label>
+          <input id="siteFilter" class="filter" type="search" placeholder="Filter sites" />
+          <div id="siteList" class="site-list"></div>
+        </section>
+      </aside>
+
+      <section class="stage" aria-label="Views" data-pane="view">
+        <div class="stage-head">
+          <div class="view-tabs" role="tablist" aria-label="View">
+            <button role="tab" id="tab-globe" data-view="globe" aria-selected="true" aria-controls="cesium" class="active">3D Moon</button>
+            <button role="tab" id="tab-polar" data-view="polar" aria-selected="false" aria-controls="polarWrap" tabindex="-1">South-pole map</button>
+          </div>
+          <div class="view-actions" role="group" aria-label="Camera">
+            <button id="viewSystem" class="ghost small" title="See the Moon with Earth beyond it">Earth–Moon</button>
+            <button id="viewOverview" class="ghost small">Whole Moon</button>
+            <button id="viewPole" class="ghost small">South pole</button>
+            <button id="viewSite" class="ghost small">Fly to site</button>
+            <button id="viewStandSun" class="ghost small">Stand here: Sun</button>
+            <button id="viewStandEarth" class="ghost small">Stand here: Earth</button>
+            <button id="lightingBtn" class="ghost small" aria-pressed="true" title="Real Sun direction with terrain shadows, or evenly lit">Real sunlight</button>
+            <button id="terrainBtn" class="ghost small" aria-pressed="true" hidden title="Switch between Cesium Moon Terrain tiles and the bundled LOLA grids">Terrain: Cesium ion</button>
+          </div>
+        </div>
+        <div class="viewport">
+          <div id="cesium" class="cesium" role="tabpanel" aria-labelledby="tab-globe"></div>
+          <div id="polarWrap" class="polar-wrap" role="tabpanel" aria-labelledby="tab-polar" hidden>
+            <canvas id="polarMap" aria-label="South-pole map. Drag to pan, scroll to zoom, click to choose a point."></canvas>
+            <fieldset class="polar-legend">
+              <legend class="visually-hidden">Map overlay</legend>
+              <label><input type="radio" name="overlay" value="none" checked /> Imagery only</label>
+              <label><input type="radio" name="overlay" value="illum" /> Average solar disk visible, 2027</label>
+              <label><input type="radio" name="overlay" value="earth" /> Earth centre above terrain, 2027</label>
+              <div id="overlayScale" class="scale" hidden>
+                <div class="scale-bar"></div>
+                <div class="scale-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+              </div>
+            </fieldset>
+          </div>
+          <div id="sceneStatus" class="scene-status" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="timeline-dock">
+          <div class="timeline-head">
+            <h2 id="timelineTitle">Operations timeline</h2>
+            <div class="seg small" role="group" aria-label="Analysis window length">
+              <button data-window="15" aria-pressed="false">15 d</button>
+              <button data-window="30" aria-pressed="true" class="active">1 lunar day</button>
+              <button data-window="90" aria-pressed="false">3 months</button>
+              <button data-window="365" aria-pressed="false">1 year</button>
+            </div>
+          </div>
+          <canvas id="timeline" tabindex="0" role="slider" aria-label="Analysis time. Left and right arrows step one hour, Shift or Page keys one day, Home and End jump to the window edges."></canvas>
+        </div>
+      </section>
+
+      <aside class="panel right" aria-label="Site assessment" data-pane="results">
+        <div id="assessment" tabindex="-1"></div>
+      </aside>
+    </main>
+
+    <section id="compareDrawer" class="compare" aria-labelledby="compareTitle" data-pane="compare">
+      <div class="compare-head">
+        <h2 id="compareTitle">Compare scenarios</h2>
+        <div class="compare-actions">
+          <button id="addScenario" class="primary small">Add current site and date</button>
+          <button id="slipScenarios" class="small" title="Same site, landing slipped by 1, 2 and 3 lunar months">Schedule slip ×3</button>
+          <button id="nearbyScenarios" class="small" title="Search terrain within 5 km for better-lit points">Find nearby alternatives</button>
+          <button id="clearScenarios" class="ghost small">Clear</button>
+          <button id="exportCsv" class="ghost small">Export CSV</button>
+          <button id="toggleCompare" class="ghost small" aria-controls="compareDrawer" aria-expanded="false">Hide</button>
+        </div>
+      </div>
+      <div id="compareBody" class="compare-body"></div>
+    </section>
+
+    <nav class="mobile-nav" aria-label="Sections">
+      <button data-pane-target="site">Site</button>
+      <button data-pane-target="view" aria-current="true">View</button>
+      <button data-pane-target="results">Results</button>
+      <button data-pane-target="compare">Compare</button>
+    </nav>
+
+    <dialog id="settings" aria-labelledby="settingsTitle">
+      <form method="dialog" id="settingsForm">
+        <h2 id="settingsTitle">Spacecraft assumptions</h2>
+        <p class="hint">These drive the power and link estimates. Defaults approximate a small CLPS-class lander.</p>
+        <fieldset>
+          <legend>Solar array</legend>
+          <label>Array type <select name="mode"></select></label>
+          <label>Area (m²) <input name="areaM2" type="number" min="0.1" step="0.1" required /></label>
+          <label>Cell efficiency (%) <input name="efficiency" type="number" min="5" max="45" step="0.5" required /></label>
+          <label>Fixed array faces (azimuth, °) <input name="fixedAzDeg" type="number" min="0" max="359" step="1" required /></label>
+          <label>Continuous load (W) <input name="loadW" type="number" min="0" step="5" required /></label>
+          <label>Mast or array height (m) <input name="mastHeightM" type="number" min="0" max="100" step="0.5" required /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Direct-to-Earth radio</legend>
+          <label>Radio <select name="preset"></select></label>
+          <label>Data rate (kbps) <input name="dataRateKbps" type="number" min="1" step="1" required /></label>
+          <label>Minimum terrain clearance (°) <input name="minClearanceDeg" type="number" min="0" max="20" step="0.5" required /></label>
+          <label>Target link margin (dB) <input name="targetMarginDb" type="number" min="0" max="20" step="0.5" required /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Cesium ion (optional)</legend>
+          <label class="wide">Access token <input name="ionToken" type="password" autocomplete="off" placeholder="Adds Cesium Moon Terrain tiles and the Artemis candidate regions" /></label>
+        </fieldset>
+        <div class="dialog-actions">
+          <button value="cancel" class="ghost" formnovalidate>Cancel</button>
+          <button value="save" class="primary">Apply</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
