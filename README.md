@@ -61,12 +61,6 @@ All calculations run in the browser from pure functions in `src/core/`, shared b
 - Libraries: [CesiumJS](https://cesium.com/platform/cesiumjs/) (Apache-2.0), [astronomy-engine](https://github.com/cosinekitty/astronomy) (MIT). Fonts: IBM Plex Sans and IBM Plex Mono (SIL Open Font License), self-hosted through Fontsource.
 - References: Mazarico et al. (2011), *Icarus* 211, 1066–1081; Archinal et al. (2018), *Celestial Mechanics and Dynamical Astronomy* 130:22; Kopp and Lean (2011), *Geophysical Research Letters* 38, L01706; Wagner et al. (2017), *Icarus* 283, 92–103.
 
-## Development and AI use
-
-> Draft for the team to review before submission.
-
-The first version of this application was generated with an AI coding assistant (Claude, by Anthropic) and later revised with the same assistant: an accessibility and bug-fix pass, a visual redesign and a guided tour. The team reviewed and directed the work.
-
 ## Reproducing the bundled data
 
 ```bash
