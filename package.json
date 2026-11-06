@@ -10,7 +10,9 @@
     "build": "vite build && node tools/fix-cesium-path.mjs",
     "preview": "vite preview",
     "test": "node --test test/*.spec.js",
-    "test:e2e": "node test/browser-e2e.cjs http://localhost:5174/"
+    "test:e2e": "node test/browser-e2e.cjs http://localhost:5174/",
+    "tutorial:shots": "node tools/tutorial/capture-shots.cjs http://localhost:4174/",
+    "tutorial:video": "node tools/tutorial/render-video.cjs http://localhost:4174/"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

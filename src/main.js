@@ -19,6 +19,8 @@ import { createPolarMap, RAMP_CSS } from './ui/polarMap.js';
 import { renderCompare, scenariosToCsv } from './ui/compare.js';
 import { compass, escapeHtml, fmtLatLon, fromLocalInputValue, toLocalInputValue } from './ui/format.js';
 import { createTour } from './ui/tour.js';
+import { createVideoTutorial } from './ui/videoTutorial.js';
+import { createWelcome } from './ui/welcome.js';
 
 const DATA = `${import.meta.env.BASE_URL}data`;
 const $ = (sel) => document.querySelector(sel);
@@ -512,6 +514,15 @@ function applyHash(hash) {
 const timeline = createTimeline($('#timeline'), { onScrub: (ms) => setTime(ms) });
 let polar = null;
 const tour = createTour({ app, actions: { selectView, showPane, isNarrow, openCompare, setTime } });
+// The interactive tour drives real controls, so it waits until the app has booted.
+let booted = false;
+let tourPending = false;
+function startTour() {
+  if (booted) tour.start();
+  else tourPending = true;
+}
+const video = createVideoTutorial({ onTour: startTour });
+const welcome = createWelcome({ video, onTour: startTour });
 
 function pickHandler(p) {
   if (p.site) return selectSite(p.site, { fly: false });
@@ -588,6 +599,7 @@ function wire() {
   document.querySelectorAll('[data-pane-target]').forEach((b) => b.addEventListener('click', () => showPane(b.dataset.paneTarget)));
   $('#compareBtn').addEventListener('click', () => openCompare(!document.body.classList.contains('compare-open')));
   $('#tourBtn').addEventListener('click', () => tour.start());
+  $('#videoBtn').addEventListener('click', () => video.open());
   window.addEventListener('hashchange', () => {
     const site = applyHash(readHash());
     if (site) selectSite(site, { fly: true });
@@ -659,8 +671,14 @@ function wire() {
 
 async function boot() {
   window.lunarApp = app; // handy for demos, debugging and the browser tests
+  if (new URLSearchParams(location.search).has('tutorial-render')) {
+    // Frame-by-frame capture of the video tutorial (tools/tutorial/render-video.cjs).
+    window.tutorialRender = video.enableRenderMode();
+    return;
+  }
   loadPrefs();
   wire();
+  welcome.offer(); // ask about the video tutorial right away, while data loads
   $('#assessment').innerHTML = '<div class="empty">Loading LOLA terrain…</div>';
   try {
     app.terrain = await loadTerrain(DATA);
@@ -717,7 +735,8 @@ async function boot() {
     selectView('polar');
   }
   app.polar = polar;
-  tour.offer();
+  booted = true;
+  if (tourPending) tour.start();
 }
 
 boot();

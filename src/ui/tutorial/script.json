@@ -1,0 +1,111 @@
+{
+ "title": "How to use Lunar Site Planner",
+ "voice": "af_heart",
+ "chapters": [
+  {
+   "id": "welcome",
+   "title": "Welcome",
+   "lines": [
+    {"text": "Welcome to Lunar Site Planner! This short video shows you how to use it, one step at a time.", "shot": "overview", "card": {"type": "title", "title": "Lunar Site Planner"}},
+    {"text": "The app answers two simple questions about landing on the Moon.", "shot": "overview", "card": {"type": "questions"}},
+    {"text": "Will the lander get enough sunlight to make power? And can it talk to Earth by radio?", "shot": "overview", "card": {"type": "questions"}}
+   ]
+  },
+  {
+   "id": "layout",
+   "title": "The screen at a glance",
+   "lines": [
+    {"text": "The screen has four main parts.", "shot": "overview"},
+    {"text": "On the left, you choose where to land.", "shot": "overview", "spot": ["sitePanel"], "label": "1 · Choose a site"},
+    {"text": "In the middle, you see the Moon, and a timeline of the coming weeks.", "shot": "overview", "spot": ["stage"], "label": "2 · Moon and timeline"},
+    {"text": "On the right are the results for your site.", "shot": "overview", "spot": ["results"], "label": "3 · Results"},
+    {"text": "And across the top, you set the date and time.", "shot": "overview", "spot": ["timebar"], "label": "4 · Date and time"}
+   ]
+  },
+  {
+   "id": "site",
+   "title": "Pick a landing site",
+   "lines": [
+    {"text": "To pick a site, just click a name in this list.", "shot": "overview", "zoom": ["coordForm", "floorItem"], "spot": ["siteList"], "cursor": "ridgeItem", "click": true},
+    {"text": "You can also click anywhere on the 3D Moon, or type a latitude and longitude in this box.", "say": "You can also click anywhere on the 3D Moon, or type a latitude and longitude in this box.", "shot": "overview", "zoom": ["coordForm", "floorItem"], "spot": ["coordForm"], "cursor": "coordForm"},
+    {"text": "We'll start with the Shackleton connecting ridge: a high ridge right next to the lunar south pole.", "shot": "overview", "zoom": ["coordForm", "floorItem"], "spot": ["ridgeItem"]}
+   ]
+  },
+  {
+   "id": "results",
+   "title": "Read the results",
+   "lines": [
+    {"text": "The results panel tells you how things look at your site, at the chosen moment.", "shot": "overview", "zoom": ["verdicts", "siteTitle"], "spot": ["verdicts", "countdowns"]},
+    {"text": "The Power card shows how many watts the solar panels make. A green “Meets load” means there's enough power to run the lander.", "say": "The Power card shows how many watts the solar panels make. A green, Meets load, means there's enough power to run the lander.", "shot": "overview", "zoom": ["verdicts", "siteTitle"], "spot": ["vPower"]},
+    {"text": "The Earth link card shows whether the lander can radio Earth. Green means yes. Red means Earth is hidden behind the terrain.", "shot": "overview", "zoom": ["verdicts", "siteTitle"], "spot": ["vComms"]},
+    {"text": "Underneath, two countdowns tell you when the Sun will set, and when Earth will next rise or set.", "shot": "overview", "zoom": ["countdowns", "verdicts"], "spot": ["countdowns"]}
+   ]
+  },
+  {
+   "id": "location",
+   "title": "Why location matters",
+   "lines": [
+    {"text": "Now let's try a different spot: the floor of Shackleton crater, about twenty kilometres away.", "shot": "overview", "zoom": ["coordForm", "floorItem"], "spot": ["floorItem"], "cursor": "floorItem", "click": true},
+    {"text": "The crater floor sits in permanent shadow. It never sees the Sun, so solar power drops to zero.", "shot": "floor", "zoom": ["verdicts", "siteTitle"], "spot": ["vPower"]},
+    {"text": "A short distance can make all the difference. That's why landing sites are chosen so carefully.", "shot": "floor", "spot": ["viewport"]}
+   ]
+  },
+  {
+   "id": "sky",
+   "title": "The sky chart",
+   "lines": [
+    {"text": "This sky chart shows what you'd see standing at the site, looking all the way around you.", "shot": "sky", "zoom": ["skyBlock"], "spot": ["skyBlock"]},
+    {"text": "The grey shape is the real skyline of hills and crater walls, measured by a NASA laser in orbit.", "shot": "sky", "zoom": ["skyBlock"], "spot": ["skyplot"]},
+    {"text": "The yellow line is the Sun's path, and the blue line is Earth's. When they're above the grey, they're visible.", "shot": "sky", "zoom": ["skyBlock"], "spot": ["skyplot"]},
+    {"text": "Below, the window summary adds it all up, like how much of the time the site is sunlit.", "shot": "sky", "zoom": ["windowBlock"], "spot": ["windowBlock"]}
+   ]
+  },
+  {
+   "id": "time",
+   "title": "Change the date",
+   "lines": [
+    {"text": "Conditions change over time, so set the date and time up here. All times are in UTC.", "say": "Conditions change over time, so set the date and time up here. All times are in U.T.C.", "shot": "overview", "zoom": ["timebar"], "spot": ["datetime"], "cursor": "datetime"},
+    {"text": "Use the plus and minus buttons to step by an hour or a day, or press Play to watch time move.", "shot": "overview", "zoom": ["timebar"], "spot": ["stepSeg"], "cursor": "play", "click": true}
+   ]
+  },
+  {
+   "id": "timeline",
+   "title": "The timeline",
+   "lines": [
+    {"text": "The timeline at the bottom shows the coming weeks at a glance.", "shot": "overview", "zoom": ["timelineDock"], "spot": ["timelineDock"]},
+    {"text": "Each coloured row is something the lander needs: sunlight, power, Earth in view, a ground station, and a working radio link.", "shot": "overview", "zoom": ["timelineDock"], "spot": ["timeline"]},
+    {"text": "A coloured bar means it's available. A gap means it's not.", "shot": "overview", "zoom": ["timelineDock"], "spot": ["timeline"]},
+    {"text": "Click or drag on the timeline to jump to any moment, and use these buttons to show fifteen days, a lunar day, three months, or a whole year.", "shot": "overview", "zoom": ["timelineDock"], "spot": ["windowBtns"], "cursor": "windowBtns"}
+   ]
+  },
+  {
+   "id": "views",
+   "title": "Explore the views",
+   "lines": [
+    {"text": "Use these tabs to switch between the 3D Moon and a flat map of the south pole.", "shot": "overview", "zoom": ["viewTabs", "viewActions"], "spot": ["viewTabs"], "cursor": "viewTabs"},
+    {"text": "The map can colour every spot by how much sunlight it gets. Yellow areas get the most sunlight, so they're the best-lit places to land.", "shot": "polar", "spot": ["viewport", "polarLegend"]},
+    {"text": "And “Stand here: Sun” shows the view from the lander itself, looking toward the Sun.", "say": "And, Stand here Sun, shows the view from the lander itself, looking toward the Sun.", "shot": "standSun", "spot": ["standSun", "viewport"]}
+   ]
+  },
+  {
+   "id": "compare",
+   "title": "Compare options",
+   "lines": [
+    {"text": "Found a good option? Press “Add to compare” to save this site and date.", "say": "Found a good option? Press, Add to compare, to save this site and date.", "shot": "overview", "zoom": ["siteTitle", "verdicts"], "spot": ["addThis"], "cursor": "addThis", "click": true},
+    {"text": "The Compare panel lines your options up side by side.", "shot": "compare", "spot": ["compare"]},
+    {"text": "“Schedule slip” tests landing one, two or three months later. “Find nearby alternatives” looks for better-lit spots close by.", "say": "Schedule slip tests landing one, two, or three months later. And, Find nearby alternatives, looks for better-lit spots close by.", "shot": "compare", "zoom": ["compare"], "spot": ["slip", "nearby"]},
+    {"text": "The best and worst values are highlighted, and you can export everything as a spreadsheet.", "shot": "compare", "zoom": ["compare"], "spot": ["compareBody"]}
+   ]
+  },
+  {
+   "id": "help",
+   "title": "Getting help",
+   "lines": [
+    {"text": "Stuck on a word? Click any question-mark button for a short definition.", "shot": "overview", "zoom": ["vPower", "siteTitle"], "spot": ["gloss"], "cursor": "gloss"},
+    {"text": "Or turn on Learn mode for plain-language explanations right inside the results.", "shot": "learn", "spot": ["learnBtn", "learnTop"]},
+    {"text": "The Spacecraft button lets you change the lander: its solar panels, how much power it uses, and its radio.", "shot": "settings", "spot": ["settings"]},
+    {"text": "That's it! You can replay this video at any time with the Video tutorial button at the top. Happy landing!", "shot": "overview", "zoom": ["topActions"], "spot": ["videoBtn"], "cursor": "videoBtn", "card": {"type": "end"}}
+   ]
+  }
+ ]
+}

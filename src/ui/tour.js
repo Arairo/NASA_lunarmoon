@@ -1,18 +1,7 @@
 // Guided first-run tour. Each step points at a real control; steps with a task
 // advance only when the app's state shows the user did it (or pressed "Do it for
 // me"). No fake data: every number the user sees comes from the live app.
-
-const SEEN_KEY = 'lsp.tourSeen';
-
-function storage(get, value) {
-  try {
-    if (get) return localStorage.getItem(SEEN_KEY);
-    localStorage.setItem(SEEN_KEY, value);
-  } catch {
-    /* private mode: the tour is simply offered again next time */
-  }
-  return null;
-}
+// It starts from the Tour button or the start-up welcome dialog.
 
 const clickSite = (id) => document.querySelector(`.site-item[data-site="${id}"]`)?.click();
 
@@ -89,7 +78,7 @@ function buildSteps({ app, actions }) {
       target: '#compareBody',
       pane: 'compare',
       title: 'Interpret the results',
-      body: 'Highlights mark clear best and worst values only. Power, battery and link values are first-order estimates, and ridge-crest results depend on the 240 m terrain grid. Use the “?” buttons for definitions, and reopen this tour from the Tour button.',
+      body: 'Highlights mark clear best and worst values only. Power, battery and link values are first-order estimates, and ridge-crest results depend on the 240 m terrain grid. Use the “?” buttons for definitions. Reopen this tour from the Tour button, or watch the narrated walkthrough with the Video tutorial button.',
     },
   ];
 }
@@ -200,8 +189,6 @@ export function createTour({ app, actions }) {
 
   function start() {
     stop();
-    dismissOffer();
-    storage(false, '1');
     lastFocus = document.activeElement;
     steps = buildSteps({ app, actions });
     ring = el('div', 'tour-ring');
@@ -228,32 +215,7 @@ export function createTour({ app, actions }) {
     lastFocus = null;
   }
 
-  let offerEl = null;
-  function dismissOffer() {
-    offerEl?.remove();
-    offerEl = null;
-  }
-
-  /** Offer the tour once on a first visit; never start it unasked. */
-  function offer() {
-    if (storage(true) || offerEl) return;
-    offerEl = el(
-      'div',
-      'tour-prompt',
-      `<p><strong>New to lunar site planning?</strong> A short tour shows how to read sunlight, Earth visibility and the comparison table using the real controls.</p>
-       <div><button class="ghost small" data-act="no">No thanks</button><button class="primary small" data-act="yes">Take the tour</button></div>`,
-    );
-    offerEl.setAttribute('role', 'region');
-    offerEl.setAttribute('aria-label', 'Tour invitation');
-    offerEl.querySelector('[data-act="no"]').addEventListener('click', () => {
-      storage(false, '1');
-      dismissOffer();
-    });
-    offerEl.querySelector('[data-act="yes"]').addEventListener('click', start);
-    document.body.append(offerEl);
-  }
-
-  return { start, stop, offer, get active() {
+  return { start, stop, get active() {
     return index >= 0;
   } };
 }

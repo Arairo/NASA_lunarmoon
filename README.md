@@ -20,7 +20,7 @@ npm run build        # static site in dist/
 
 No API keys are needed: terrain, imagery, fonts and ephemerides all work offline. An optional [Cesium ion](https://ion.cesium.com/tokens) token (in `.env` as `VITE_CESIUM_ION_TOKEN=...`, or under **Spacecraft**) adds Cesium Moon Terrain tiles and NASA's Artemis candidate landing regions as visual layers. All numbers still come from the bundled LOLA grids.
 
-New users can press **Tour** for a guided walkthrough that uses the real controls. The **?** buttons next to technical terms open short definitions.
+New users are asked at start-up whether they want the **video tutorial**: a narrated, captioned walkthrough (about 3½ minutes, 11 chapters) built from screenshots of the real app. It can be reopened at any time with the amber **▶ Video tutorial** button in the top bar, and is also available as an [MP4 download](public/tutorial/lunar-site-planner-tutorial.mp4). **Tour** starts an interactive walkthrough that uses the real controls instead. The **?** buttons next to technical terms open short definitions.
 
 ## What it does
 
@@ -70,13 +70,29 @@ python tools/build_imagery.py public/data        # LROC imagery
 node tools/illumination_map.mjs 75 1 2027        # 2027 map overlay (about 7 min on 4 cores)
 ```
 
+## Video tutorial
+
+The player (`src/ui/videoTutorial.js`) plays the voice-over track and draws each frame from the current playback time: zooms, spotlights, the cursor and captions are computed from the narration timing, so seeking, speed changes and muting stay in sync. Without audio it runs on an internal clock with captions. Keys: Space play/pause, ←/→ 5 s, Shift+←/→ chapter, C captions, M voice, F full screen.
+
+To change it, edit the narration and the on-screen directions in `src/ui/tutorial/script.json` (`shot`, `zoom`, `spot`, `cursor`, `click`, `label`, `card`), then rebuild the parts that changed:
+
+```bash
+pip install kokoro-onnx soundfile numpy           # offline neural text-to-speech
+# kokoro-v1.0.int8.onnx and voices-v1.0.bin from github.com/thewh1teagle/kokoro-onnx/releases (model-files-v1.0)
+python tools/tutorial/build_narration.py kokoro-v1.0.int8.onnx voices-v1.0.bin   # voice-over + timing.json
+
+npm run build && npx vite preview --port 4174 &   # a static build, so edits don't reload the page mid-capture
+npm run tutorial:shots                            # screenshots + control positions (after UI changes)
+npm run tutorial:video                            # downloadable MP4 (rebuild first so it uses the new shots)
+```
+
 ## Tests
 
 ```bash
 npm test                                         # unit tests
 npm i --no-save playwright && npx playwright install chromium
 npm run dev &                                    # in another terminal is fine too
-npm run test:e2e                                 # browser checks of every control, the tour and phone layout
+npm run test:e2e                                 # browser checks of every control, the video tutorial, the tour and phone layout
 ```
 
 ## Deployment
@@ -89,8 +105,10 @@ The workflow in `.github/workflows/deploy.yml` runs the unit tests and publishes
 index.html, vite.config.js, package.json
 src/core/      ephemeris, horizon (LOLA), power, comms, analysis, sites, geo
 src/scene/     CesiumJS Moon scene
-src/ui/        sky plot, timeline, polar map, results panel, comparison, glossary, tour
+src/ui/        sky plot, timeline, polar map, results panel, comparison, glossary, tour,
+               video tutorial player and start-up welcome (script, timing and shot positions in src/ui/tutorial/)
 public/data/   LOLA grids, LROC imagery, 2027 map overlay
-tools/         data build scripts
+public/tutorial/  video tutorial screenshots, voice-over and MP4
+tools/         data build scripts; tools/tutorial/ rebuilds the video tutorial
 test/          unit tests and the browser end-to-end check
 ```

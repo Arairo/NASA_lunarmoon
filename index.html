@@ -42,7 +42,11 @@
         <button id="nowBtn" class="ghost" title="Jump to the current time">Now</button>
       </div>
       <div class="top-actions">
-        <button id="tourBtn" class="ghost">Tour</button>
+        <button id="videoBtn" class="video-btn" title="Watch a short video tutorial with voice-over" aria-haspopup="dialog">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" /><path d="M8.2 6.3v7.4l5.8-3.7z" /></svg>
+          <span class="vb-long">Video tutorial</span><span class="vb-short">Tutorial</span>
+        </button>
+        <button id="tourBtn" class="ghost" title="Interactive step-by-step tour">Tour</button>
         <button id="learnBtn" class="ghost" aria-pressed="false" title="Show plain-language explanations">Learn mode</button>
         <button id="settingsBtn" class="ghost" title="Spacecraft assumptions">Spacecraft</button>
         <button id="compareBtn" class="ghost" aria-controls="compareDrawer" aria-expanded="false">Compare <span id="compareCount" class="count">0</span></button>

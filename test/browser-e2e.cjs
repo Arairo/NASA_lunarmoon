@@ -75,8 +75,8 @@ async function assessmentClean() {
 (async () => {
   browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] });
-  // The first-visit tour invitation is tested on its own below.
-  await ctx.addInitScript(() => { try { localStorage.setItem('lsp.tourSeen', '1'); } catch {} });
+  // The start-up welcome dialog is tested on its own below.
+  await ctx.addInitScript(() => { try { localStorage.setItem('lsp.welcomeOff', '1'); } catch {} });
   page = await ctx.newPage();
   page.setDefaultTimeout(120000);
   let ionRequests = 0;
@@ -569,16 +569,50 @@ async function assessmentClean() {
     assert(n >= 6 && open.includes('Terrain horizon'), `${n} buttons, popover "${open.slice(0, 40)}"`);
     return `${n} glossary buttons; popover opens and closes with Esc`;
   });
-  await check('Guided tour: offered once, real tasks, skip and restart', async () => {
-    // A fresh context without the "tour seen" flag, as a first-time visitor.
+  await check('Video tutorial: opens from the top bar, plays with captions, chapters, Esc closes', async () => {
+    await page.click('#videoBtn');
+    await page.waitForSelector('dialog.vt[open]');
+    const imgs = await page.$$eval('.vt-shots img', (l) => Promise.all(l.map((i) => i.decode().then(() => i.naturalWidth).catch(() => 0))));
+    assert(imgs.length >= 6 && imgs.every((w) => w > 1000), `screenshots not loaded: ${imgs}`);
+    const audioOk = await page.evaluate(() => fetch(new URL('tutorial/narration.mp3', location.href)).then((r) => r.ok && r.headers.get('content-type')?.includes('audio')));
+    assert(audioOk, 'narration.mp3 missing');
+    await page.waitForFunction(() => /^0:0[2-9]|^0:[1-5]/.test(document.querySelector('.vt-cur').textContent), null, { timeout: 20000 });
+    const cap = await text('.vt-caption span');
+    assert(/Welcome to Lunar Site Planner/.test(cap), `caption "${cap}"`);
+    // Jump to the "Pick a landing site" chapter from the list.
+    await page.click('.vt-chapters [data-chapter="2"]');
+    await wait(1200);
+    const ch = await text('.vt-chapter-name');
+    const cap2 = await text('.vt-caption span');
+    assert(ch === 'Pick a landing site' && /click a name/.test(cap2), `chapter "${ch}", caption "${cap2}"`);
+    await page.keyboard.press('KeyC'); await wait(150);
+    const capOff = await page.$eval('.vt-caption', (e) => !e.classList.contains('on'));
+    await page.keyboard.press('KeyC');
+    await page.keyboard.press('Escape'); await wait(300);
+    const closed = await page.$eval('dialog.vt', (d) => !d.open);
+    assert(capOff && closed, JSON.stringify({ capOff, closed }));
+    return `${imgs.length} screenshots, narration track, captions toggle (C), chapter jump, Esc closes`;
+  });
+  await check('Start-up welcome: asks about the video, tour option, "don\'t ask again"', async () => {
+    // A fresh context, as a first-time visitor.
     const tctx = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
     const page = await tctx.newPage();
     page.setDefaultTimeout(180000);
     const text = (sel) => page.$eval(sel, (el) => el.innerText);
     const app = (expr) => page.evaluate(expr);
     await page.goto(BASE, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.lunarApp && window.lunarApp.scene && document.querySelector('.tour-prompt'), null, { timeout: 180000 });
-    await page.click('.tour-prompt [data-act="yes"]');
+    await page.waitForSelector('dialog.welcome[open]', { timeout: 30000 });
+    const welcomeText = await text('dialog.welcome');
+    assert(/video tutorial/i.test(welcomeText), 'welcome does not offer the video');
+    // Watch → the player opens; close it again.
+    await page.click('.welcome-actions [data-act="watch"]');
+    await page.waitForSelector('dialog.vt[open]');
+    await page.keyboard.press('Escape');
+    // Reload: asked again; choose the interactive tour this time.
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('dialog.welcome[open]', { timeout: 30000 });
+    await page.click('.welcome-actions [data-act="tour"]');
+    await page.waitForSelector('.tour-panel', { timeout: 180000 });
     const titles = [];
     for (let i = 0; i < 12 && (await page.$('.tour-panel')); i++) {
       titles.push(await text('.tour-panel h2'));
@@ -591,17 +625,23 @@ async function assessmentClean() {
     }
     const st = await app(() => ({ site: window.lunarApp.site.id, n: window.lunarApp.scenarios.length }));
     assert(titles.length === 9 && st.site === 'ridge' && st.n >= 4, JSON.stringify({ titles, st }));
+    // Reload: tick "don't ask" and skip → the hint points at the button.
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('dialog.welcome[open]', { timeout: 30000 });
+    await page.check('.welcome [data-act="off"]');
+    await page.click('.welcome [data-act="skip"]');
+    const hinted = !!(await page.waitForSelector('.video-hint', { timeout: 5000 }).catch(() => null));
     await page.reload({ waitUntil: 'load' });
     await page.waitForFunction(() => window.lunarApp && document.querySelector('#vPower .big'), null, { timeout: 120000 });
-    await wait(1500);
-    const offeredAgain = !!(await page.$('.tour-prompt'));
+    await wait(1000);
+    const askedAgain = !!(await page.$('dialog.welcome[open]'));
     await page.click('#tourBtn'); await wait(300);
     const restarted = !!(await page.$('.tour-panel'));
     await page.keyboard.press('Escape'); await wait(200);
     const closed = !(await page.$('.tour-panel'));
     await tctx.close();
-    assert(!offeredAgain && restarted && closed, JSON.stringify({ offeredAgain, restarted, closed }));
-    return `${titles.length} steps completed with real actions; not offered again; Tour button restarts; Esc exits`;
+    assert(hinted && !askedAgain && restarted && closed, JSON.stringify({ hinted, askedAgain, restarted, closed }));
+    return `welcome opens the video or the ${titles.length}-step tour; skip points at the button; opt-out remembered; Tour button restarts; Esc exits`;
   });
 
   // ---------------------------------------------------------------- mobile
@@ -611,7 +651,7 @@ async function assessmentClean() {
     const b3 = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
     const m = await b3.newPage({ viewport: { width: 390, height: 844 } });
     m.setDefaultTimeout(120000);
-    await m.addInitScript(() => { try { localStorage.setItem('lsp.tourSeen', '1'); } catch {} });
+    await m.addInitScript(() => { try { localStorage.setItem('lsp.welcomeOff', '1'); } catch {} });
     m.on('pageerror', (e) => errors.push('pageerror(mobile): ' + e.message));
     const tl = Date.now(); await m.goto(BASE, { waitUntil: 'load', timeout: 90000 }); const loadMs = Date.now() - tl;
     await m.waitForFunction(() => window.lunarApp && document.querySelector('#vPower .big'), null, { timeout: 60000 });
