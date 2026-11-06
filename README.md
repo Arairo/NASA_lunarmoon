@@ -83,7 +83,7 @@ python tools/tutorial/build_narration.py kokoro-v1.0.int8.onnx voices-v1.0.bin  
 
 npm run build && npx vite preview --port 4174 &   # a static build, so edits don't reload the page mid-capture
 npm run tutorial:shots                            # screenshots + control positions (after UI changes)
-npm run tutorial:video                            # downloadable MP4 (rebuild first so it uses the new shots)
+npm run tutorial:video                            # downloadable 720p MP4, about 10 MB (rebuild first so it uses the new shots)
 ```
 
 ## Tests

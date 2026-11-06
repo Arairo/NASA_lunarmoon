@@ -16,7 +16,7 @@ const BASE = process.argv[2] || 'http://localhost:4174/';
 const ROOT = path.resolve(__dirname, '../..');
 const AUDIO = path.join(ROOT, 'public/tutorial/narration.mp3');
 const OUT = path.join(ROOT, 'public/tutorial/lunar-site-planner-tutorial.mp4');
-const FPS = Number(process.env.FPS || 30);
+const FPS = Number(process.env.FPS || 24);
 const W = 1920;
 const H = 1080;
 
@@ -36,8 +36,10 @@ const H = 1080;
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     '-i', AUDIO,
     '-map', '0:v', '-map', '1:a',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '24', '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-b:a', '96k', '-shortest', '-movflags', '+faststart',
+    // Frames are drawn at 1080p and scaled down: 720p keeps the file near 10 MB.
+    '-vf', 'scale=1280:720:flags=lanczos',
+    '-c:v', 'libx264', '-preset', 'slower', '-crf', '31', '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-b:a', '64k', '-shortest', '-movflags', '+faststart',
     OUT,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => ff.on('close', (c) => (c ? rej(new Error(`ffmpeg exited ${c}`)) : res())));
