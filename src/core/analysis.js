@@ -22,15 +22,20 @@ export const DEFAULT_CONFIG = {
 
 /** Resolve terrain and horizon once per site so time scans stay cheap. */
 export function prepareSite(site, terrain, config = DEFAULT_CONFIG) {
-  const horizon = computeHorizon(terrain, site.lat, site.lon, { mastHeight: config.mastHeightM });
+  // At exactly ±90° azimuth and longitude are undefined; 1e-4° (about 3 m) away they are not.
+  const lat = Math.max(-POLE_LIMIT_DEG, Math.min(POLE_LIMIT_DEG, site.lat));
+  const horizon = computeHorizon(terrain, lat, site.lon, { mastHeight: config.mastHeightM });
   return {
     ...site,
+    lat,
     groundHeight: horizon.groundHeight,
     height: horizon.groundHeight + config.mastHeightM,
-    basis: enuBasis(site.lat, site.lon),
+    basis: enuBasis(lat, site.lon),
     horizon,
   };
 }
+
+export const POLE_LIMIT_DEG = 89.9999;
 
 /** Everything about one site at one instant. */
 export function evaluate(ms, ctx, config = DEFAULT_CONFIG, { withDsn = true } = {}) {
@@ -198,6 +203,8 @@ export function scan(ctx, { startMs, endMs, stepMs = 20 * 60000 }, config = DEFA
     longestDarkH: dark.hours,
     longestDarkOpenEnded: dark.openEnded,
     batteryKWh: maxDrawdownWh / 1000,
+    // The deficit is cut off by the window edge: the true battery need may be larger.
+    batteryOpenEnded: maxDrawdownWh > 0 && (watts[0] < config.power.loadW || watts[n - 1] < config.power.loadW),
     earthVisibleFraction: mean(visible),
     earthCentreFraction: mean(los),
     dsnFraction: mean(dsnAny),

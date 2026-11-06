@@ -214,8 +214,11 @@ function findEvents(now) {
   let earth = fromScan(s.los, isEarthUp, earthUp);
   const key = `${app.site.lat},${app.site.lon},${app.windowStartMs},${app.windowDays},${sunUp},${earthUp}`;
   if (sun === undefined || earth === undefined) {
-    if (app.eventsKey !== key) {
+    const c = app.eventsCache;
+    const stale = (ev) => ev && ev.ms <= now.ms;
+    if (app.eventsKey !== key || !c || now.ms < c.fromMs || stale(c.sun) || stale(c.earth)) {
       app.eventsCache = {
+        fromMs: now.ms,
         sun: nextTransition(app.ctx, now.ms, isSunUp, app.config),
         earth: nextTransition(app.ctx, now.ms, isEarthUp, app.config),
       };
@@ -569,6 +572,7 @@ function wire() {
     b.addEventListener('click', () => {
       app.windowDays = Number(b.dataset.window);
       syncWindowButtons();
+      if (app.timeMs < app.windowStartMs || app.timeMs >= app.windowStartMs + app.windowDays * 86400000) app.windowStartMs = app.timeMs;
       recomputeWindow();
       history.replaceState(null, '', scenarioLink());
     }),
@@ -589,10 +593,28 @@ function wire() {
   $('#compareBtn').addEventListener('click', () => openCompare(!document.body.classList.contains('compare-open')));
   $('#tourBtn').addEventListener('click', () => tour.start());
   window.addEventListener('hashchange', () => {
-    const site = applyHash(readHash());
+    const hash = readHash();
+    if (!hash.site && !hash.id && !hash.t && !hash.w) {
+      history.replaceState(null, '', scenarioLink());
+      return;
+    }
+    const site = applyHash(hash);
     if (site) selectSite(site, { fly: true });
-    else recomputeWindow();
+    else {
+      if (app.timeMs < app.windowStartMs || app.timeMs >= app.windowStartMs + app.windowDays * 86400000) app.windowStartMs = app.timeMs;
+      recomputeWindow();
+      history.replaceState(null, '', scenarioLink());
+    }
   });
+  // "Skip to results" moves focus without changing the scenario URL.
+  $('.skip-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (isNarrow()) showPane('results');
+    $('#assessment').focus();
+  });
+  // Cancel closes the settings without applying; Apply is the form's only submit button,
+  // so Enter in any field applies the settings.
+  $('#settingsCancel').addEventListener('click', () => $('#settings').close('cancel'));
   document.querySelectorAll('input[name="overlay"]').forEach((r) =>
     r.addEventListener('change', () => {
       polar.setOverlay(r.value);

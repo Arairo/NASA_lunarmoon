@@ -61,7 +61,7 @@ export function renderSkeleton(root, site, ctx) {
     <div class="block" id="linkBlock">
       <h3>Direct-to-Earth link ${term('dte')} <small id="radioLabel"></small></h3>
       <dl class="kv" id="linkStats"></dl>
-      <div class="dsn" id="dsnChips" aria-label="Moon elevation at each Deep Space Network complex"></div>
+      <div class="dsn" id="dsnChips" role="group" aria-label="Moon elevation at each Deep Space Network complex"></div>
       <p class="fine">First-order link budget to a DSN 34 m antenna ${term('dsn')}. Relay satellites and other ground networks are not modelled.</p>
       <div class="learn" id="learnLink"></div>
     </div>
@@ -73,13 +73,19 @@ export function renderSkeleton(root, site, ctx) {
   root.querySelector('#learnLink').innerHTML = learn.link;
 }
 
+// While a "?" button inside a block is focused, pressed or hovered, rebuilding the
+// block (every frame during playback) would remove it mid-click.
+const busy = (el) => el.contains(document.activeElement) || !!el.querySelector('.gloss:hover, .gloss:active');
+
 export function renderNow(root, { now, events, config }) {
   const vPower = root.querySelector('#vPower');
   if (!vPower) return;
   const sun = now.sun;
+  // 8. "No sunlight" only when no part of the Sun is above the terrain.
+  const powerText = now.powerStatus === 'no-go' && sun.fraction > 0 ? 'No array output' : POWER_TEXT[now.powerStatus];
   vPower.className = `verdict ${now.powerStatus}`;
-  vPower.innerHTML = `
-    <div class="label"><span>Power</span>${status(now.powerStatus, POWER_TEXT[now.powerStatus])}</div>
+  if (!busy(vPower)) vPower.innerHTML = `
+    <div class="label"><span>Power</span>${status(now.powerStatus, powerText)}</div>
     <div class="big">${sun.watts >= 1 ? `${sun.watts.toFixed(0)} W` : '0 W'}</div>
     <div class="sub">Load ${config.power.loadW} W · Sun ${deg(sun.el)} at ${sun.az.toFixed(0)}° ${compass(sun.az)} · ${pct(sun.fraction)} of disk above terrain ${term('disk')}</div>`;
 
@@ -101,14 +107,15 @@ export function renderNow(root, { now, events, config }) {
     target.innerHTML = `<div class="label">${title} in</div><div class="value">${fmtDuration(ev.ms - now.ms)}</div><div class="when">${fmtUtc(ev.ms)}</div>`;
   };
   cd('#cdSun', 'Sun', events.sun, sun.fraction > 0, { set: 'Sunset', rise: 'Sunrise' });
-  cd('#cdEarth', 'Earth', events.earth, earth.los, { set: 'Earthset', rise: 'Earthrise' });
+  cd('#cdEarth', 'Earth centre', events.earth, earth.los, { set: 'Earth centre sets', rise: 'Earth centre rises' });
 
   const link = now.link;
   const radio = RADIO_PRESETS[config.comms.preset];
   root.querySelector('#radioLabel').textContent = `${radio.label}, ${radio.txPowerW} W`;
   const cls = (v, good, ok) => (v >= good ? 'go' : v >= ok ? 'marginal' : 'no-go');
   const rateNote = link.rateLimitedBy === 'radio' ? '<span class="qual">radio limit</span>' : '<span class="qual">link limit</span>';
-  root.querySelector('#linkStats').innerHTML = `
+  const linkStats = root.querySelector('#linkStats');
+  if (!busy(linkStats)) linkStats.innerHTML = `
     <dt>Range to Earth</dt><dd>${(earth.distM / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })} km</dd>
     <dt>Light time one-way / round trip ${term('lightTime')}</dt><dd>${earth.lightTimeS.toFixed(3)} s / ${(2 * earth.lightTimeS).toFixed(2)} s</dd>
     <dt>Earth azimuth / elevation</dt><dd>${earth.az.toFixed(1)}° / ${deg(earth.el)}</dd>
@@ -133,7 +140,7 @@ export function renderWindow(root, { scan, config }) {
     <dt>Average array output (estimate)</dt><dd>${s.avgPowerW.toFixed(0)} W</dd>
     <dt>Energy generated (estimate)</dt><dd>${s.energyKWh.toFixed(0)} kWh</dd>
     <dt>Longest continuous darkness</dt><dd>${open(s.longestDarkOpenEnded && s.longestDarkH > 0)}${fmtHours(s.longestDarkH)}</dd>
-    <dt>Battery to carry ${config.power.loadW} W (estimate)</dt><dd>${s.batteryKWh.toFixed(1)} kWh</dd>
+    <dt>Battery to carry ${config.power.loadW} W (estimate)</dt><dd>${open(s.batteryOpenEnded)}${s.batteryKWh.toFixed(1)} kWh</dd>
     <dt>Sun elevation range</dt><dd>${deg(s.minSunEl, 1)} to ${deg(s.maxSunEl, 1)}</dd>
     <dt>Earth visible (any part of disk)</dt><dd>${pct(s.earthVisibleFraction, 1)}</dd>
     <dt>Direct-to-Earth link available</dt><dd>${pct(s.dteFraction, 1)}</dd>

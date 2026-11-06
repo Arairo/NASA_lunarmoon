@@ -188,3 +188,33 @@ test('comparison screening labels', async () => {
   assert.equal(verdictFor({ litFraction: 0.9, longestDarkH: 50, dteFraction: 0.2, longestBlackoutH: 300 }).text, 'Comms-limited');
   assert.equal(verdictFor({ litFraction: 0.3, longestDarkH: 300, dteFraction: 0.6, longestBlackoutH: 100 }).text, 'Power-limited');
 });
+
+test('an exact pole is moved 1e-4 degrees off it, so every azimuth is well defined', () => {
+  const pole = prepareSite({ lat: -90, lon: 0 }, terrain);
+  const near = prepareSite({ lat: -89.9999, lon: 0 }, terrain);
+  assert.equal(pole.lat, -89.9999);
+  for (let i = 0; i < pole.horizon.elevations.length; i++) close(pole.horizon.elevations[i], near.horizon.elevations[i], 1e-9);
+  // Longitude no longer changes the answer by more than the ~3 m offset allows.
+  const other = prepareSite({ lat: -90, lon: 90 }, terrain);
+  const win = { startMs: Date.UTC(2027, 0, 1), endMs: Date.UTC(2027, 2, 1), stepMs: 6 * 3600000 };
+  const a = scan(pole, win, DEFAULT_CONFIG, { withDsn: false }).stats;
+  const b = scan(other, win, DEFAULT_CONFIG, { withDsn: false }).stats;
+  close(a.litFraction, b.litFraction, 0.05);
+});
+
+test('battery need is flagged as a lower bound when the window starts or ends in darkness', () => {
+  const ctx = prepareSite(SITES.find((s) => s.id === 'a11'), terrain);
+  const r = scan(ctx, { startMs: Date.UTC(2027, 0, 1), endMs: Date.UTC(2027, 0, 16), stepMs: 60 * 60000 }, DEFAULT_CONFIG, { withDsn: false });
+  assert.ok(r.stats.batteryKWh > 0);
+  assert.equal(r.stats.batteryOpenEnded, true);
+});
+
+test('CSV marks values cut off by the window', async () => {
+  const { scenariosToCsv } = await import('../src/ui/compare.js');
+  const ctx = prepareSite(SITES.find((s) => s.id === 'a11'), terrain);
+  const sc = scan(ctx, { startMs: Date.UTC(2027, 0, 1), endMs: Date.UTC(2027, 0, 16), stepMs: 60 * 60000 }, DEFAULT_CONFIG, { withDsn: false });
+  const csv = scenariosToCsv([{ label: 'A "quoted" label', site: ctx, startMs: sc.startMs, windowDays: 15, scan: sc }]).split('\n');
+  assert.ok(csv[0].includes('batteryKWh_cut_by_window'));
+  assert.ok(csv[1].startsWith('"A ""quoted"" label"'));
+  assert.ok(csv[1].includes(',yes,'));
+});

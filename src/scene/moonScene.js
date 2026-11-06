@@ -433,6 +433,10 @@ export async function createMoonScene(container, { terrain, onPick, onStatus }) 
   async function enableIon(token) {
     if (!token) return { terrain: false, artemis: false };
     Cesium.Ion.defaultAccessToken = token;
+    if (ionTileset) scene.primitives.remove(ionTileset);
+    if (artemisSource) viewer.dataSources.remove(artemisSource, true);
+    ionTileset = artemisSource = null;
+    scene.globe.show = true;
     try {
       ionTileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829, { enableCollision: true });
       ionTileset.shadows = Cesium.ShadowMode.ENABLED;

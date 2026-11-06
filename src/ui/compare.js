@@ -9,11 +9,11 @@ import { drawStrip } from './timeline.js';
 const COLUMNS = [
   { key: 'litFraction', label: 'Sunlit', fmt: (v) => pct(v, 1), better: 'high', tol: 0.03 },
   { key: 'avgPowerW', label: 'Avg power', fmt: (v) => `${v.toFixed(0)} W`, better: 'high', tolRel: 0.05 },
-  { key: 'longestDarkH', label: 'Longest dark', fmt: fmtHours, better: 'low', tol: 12 },
-  { key: 'batteryKWh', label: 'Battery', fmt: (v) => `${v.toFixed(1)} kWh`, better: 'low', tolRel: 0.1, tol: 0.2 },
+  { key: 'longestDarkH', label: 'Longest dark', fmt: fmtHours, better: 'low', tol: 12, open: 'longestDarkOpenEnded' },
+  { key: 'batteryKWh', label: 'Battery', fmt: (v) => `${v.toFixed(1)} kWh`, better: 'low', tolRel: 0.1, tol: 0.2, open: 'batteryOpenEnded' },
   { key: 'earthVisibleFraction', label: 'Earth visible', fmt: (v) => pct(v, 1), better: 'high', tol: 0.03 },
   { key: 'dteFraction', label: 'DTE link', fmt: (v) => pct(v, 1), better: 'high', tol: 0.03 },
-  { key: 'longestBlackoutH', label: 'Longest blackout', fmt: fmtHours, better: 'low', tol: 12 },
+  { key: 'longestBlackoutH', label: 'Longest blackout', fmt: fmtHours, better: 'low', tol: 12, open: 'longestBlackoutOpenEnded' },
 ];
 
 // Illustrative screening thresholds, shown to the user under the table.
@@ -73,7 +73,8 @@ export function renderCompare(root, scenarios, { activeId, onSelect, onRemove })
                 const m = marks[c.key];
                 const cls = m ? (val === m.best ? 'best' : val === m.worst ? 'worst' : '') : '';
                 const sr = cls === 'best' ? '<span class="visually-hidden"> (best)</span>' : cls === 'worst' ? '<span class="visually-hidden"> (worst)</span>' : '';
-                return `<td class="${cls}">${c.fmt(val)}${sr}</td>`;
+                const ge = c.open && s.scan.stats[c.open] && val > 0 ? '≥ ' : '';
+                return `<td class="${cls}">${ge}${c.fmt(val)}${sr}</td>`;
               }).join('')}
               <td><span class="status ${v.status}">${v.text}</span></td>
               <td><button class="x ghost small" data-remove="${s.id}" aria-label="Remove ${escapeHtml(s.label)}">Remove</button></td>
@@ -82,7 +83,7 @@ export function renderCompare(root, scenarios, { activeId, onSelect, onRemove })
           .join('')}
       </tbody>
     </table>
-    <p class="fine">Highlights mark the best and worst value only where they differ by more than about 3 percentage points, 12 hours or 5–10%. Screening uses illustrative thresholds: sunlit ≥ ${CRITERIA.minLit * 100}% with longest darkness ≤ ${CRITERIA.maxDarkH} h for power, and DTE ≥ ${CRITERIA.minDte * 100}% with longest blackout ≤ ${CRITERIA.maxBlackoutH} h for communications. Adjust them to your mission.</p>`;
+    <p class="fine">“≥” marks a value cut off by the start or end of the window, so the true value may be larger. Highlights mark the best and worst value only where they differ by more than about 3 percentage points, 12 hours or 5–10%. Screening uses illustrative thresholds: sunlit ≥ ${CRITERIA.minLit * 100}% with longest darkness ≤ ${CRITERIA.maxDarkH} h for power, and DTE ≥ ${CRITERIA.minDte * 100}% with longest blackout ≤ ${CRITERIA.maxBlackoutH} h for communications. Adjust them to your mission.</p>`;
   for (const s of scenarios) {
     const c = root.querySelector(`[data-strip="${s.id}"]`);
     if (c) drawStrip(c, s.scan);
@@ -92,7 +93,8 @@ export function renderCompare(root, scenarios, { activeId, onSelect, onRemove })
 }
 
 export function scenariosToCsv(scenarios) {
-  const head = ['label', 'lat', 'lon', 'window_start_utc', 'window_days', ...COLUMNS.map((c) => c.key), 'screening'];
+  const OPEN = COLUMNS.filter((c) => c.open);
+  const head = ['label', 'lat', 'lon', 'window_start_utc', 'window_days', ...COLUMNS.map((c) => c.key), ...OPEN.map((c) => `${c.key}_cut_by_window`), 'screening'];
   const rows = scenarios.map((s) => [
     `"${s.label.replace(/"/g, '""')}"`,
     s.site.lat.toFixed(5),
@@ -100,6 +102,7 @@ export function scenariosToCsv(scenarios) {
     new Date(s.startMs).toISOString(),
     s.windowDays,
     ...COLUMNS.map((c) => (+s.scan.stats[c.key]).toFixed(4)),
+    ...OPEN.map((c) => (s.scan.stats[c.open] && s.scan.stats[c.key] > 0 ? 'yes' : 'no')),
     verdictFor(s.scan.stats).text,
   ]);
   return [head.join(','), ...rows.map((r) => r.join(','))].join('\n');

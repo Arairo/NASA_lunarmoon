@@ -200,9 +200,10 @@ export function createTour({ app, actions }) {
 
   function start() {
     stop();
+    const fromOffer = offerEl?.contains(document.activeElement);
+    lastFocus = fromOffer ? document.querySelector('#tourBtn') : document.activeElement;
     dismissOffer();
     storage(false, '1');
-    lastFocus = document.activeElement;
     steps = buildSteps({ app, actions });
     ring = el('div', 'tour-ring');
     panel = el('div', 'tour-panel');

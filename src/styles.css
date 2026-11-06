@@ -14,6 +14,7 @@
   --ink-3: #5c656e;
   --line: #d6d9d3;
   --line-strong: #b4b9b1;
+  --control-border: #848a82;
   --space: #000000;
 
   /* Interaction */
@@ -140,7 +141,7 @@ button[aria-pressed='true'] {
 input,
 select {
   background: var(--surface);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius);
   padding: 6px 8px;
   min-height: 32px;

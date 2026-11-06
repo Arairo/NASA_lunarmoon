@@ -86,13 +86,4 @@ export function sunDirection(state) {
   return unit(state.sun);
 }
 
-/** Lunar phase as seen from Earth: 0 = new, 0.5 = full (illuminated-fraction proxy). */
-export function earthPhaseFromMoon(state) {
-  // Earth's phase seen from the Moon is the complement of the Moon's phase.
-  const s = unit(state.sun);
-  const e = unit(state.earth);
-  const cosAngle = s[0] * e[0] + s[1] * e[1] + s[2] * e[2];
-  return (1 + cosAngle) / 2; // 1 = "full Earth" (Sun behind the observer's Moon)
-}
-
 export const SYNODIC_MONTH_DAYS = 29.530588;

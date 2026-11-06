@@ -126,7 +126,7 @@ async function assessmentClean() {
   await check('Verdict tiles, countdowns, window stats and link block populated', async () => {
     const t = await assessmentClean();
     for (const s of ['POWER', 'EARTH LINK', 'Time sunlit', 'Longest continuous darkness', 'Battery', 'Light time', 'Free-space loss', 'Goldstone', 'Madrid', 'Canberra']) assert(t.toUpperCase().includes(s.toUpperCase()), `missing "${s}"`);
-    assert(/(Sunset|Sunrise)/.test(t) && /(Earthset|Earthrise)/.test(t), 'countdowns missing');
+    assert(/(Sunset|Sunrise)/.test(t) && /(Earthset|Earthrise|Earth centre (sets|rises))/.test(t), 'countdowns missing');
     return 'all blocks present, no NaN/undefined';
   });
 
